@@ -2,6 +2,7 @@ import System.Environment (getArgs)
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Interact
 import Data.Matrix
+import Data.Maybe (listToMaybe, fromMaybe)
 
 import Game
 import Drawing
@@ -11,7 +12,7 @@ window = InWindow "Jogo Da Velha" (truncate totalSide,truncate totalSide) (100,5
 
 main :: IO ()
 main = do
-  size <- read . head <$> getArgs
+  size <- maybe 3 read . listToMaybe <$> getArgs
   play
     window
     white
