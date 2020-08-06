@@ -17,7 +17,7 @@ main = do
     window
     white
     30
-    (Game (allXs size) X $ GameOver $ Just X)
+    (initial size)
     (drawGame
       (size, totalSide / fromIntegral size))
     transform
