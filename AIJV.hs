@@ -39,9 +39,9 @@ findBlanks
 
 score :: Game -> Score
 score (Game _ _ (GameOver (Just player))) = Win player
-score game@(Game board player Going)
-  | isNotWorth game = Draw
-  | otherwise =
+score game@(Game board player Going) =
+  -- | isNotWorth game = Draw
+  -- | otherwise =
   case findBlanks board of
     [] -> Draw
     bs ->
