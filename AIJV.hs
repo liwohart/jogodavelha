@@ -39,14 +39,21 @@ compareByPlayer player s1 s2 =
       | player == player' -> LT
       | otherwise -> GT
 
-pickByPlayer :: Player -> Score -> Score -> Score
-pickByPlayer player s1@(Win player') s2
-  | player == player' = s1
-  | otherwise = s2
-pickByPlayer player s1 s2@(Win player')
-  | player == player' = s2
-  | otherwise = s1
-pickByPlayer _ Draw _ = Draw
+pickByX :: Score -> [Score] -> Score
+pickByX best [] = best
+pickByX _ (Win X:_) = Win X
+pickByX _ (Draw:rest) = pickByX Draw rest
+pickByX best (Win O: rest) = pickByX best rest
+
+pickByO :: Score -> [Score] -> Score
+pickByO best [] = best
+pickByO _ (Win O:_) = Win O
+pickByO _ (Draw:rest) = pickByO Draw rest
+pickByO best (Win X: rest) = pickByO best rest
+
+pickByPlayer :: Player -> [Score] -> Score
+pickByPlayer X = pickByX (Win O)
+pickByPlayer O = pickByO (Win X)
 
 chooseByPlayer :: Player -> [Score] -> Score
 chooseByPlayer X = maximum
@@ -72,7 +79,7 @@ score game@(Game board player Going) =
     [] -> Draw
     bs ->
       let scenarios = map (`unsafeMarkInGame` game) bs
-       in foldl1 (pickByPlayer player)
+       in pickByPlayer player
           $ map score scenarios
 score _ = Draw
 
