@@ -14,9 +14,16 @@ data Score
   | Draw
   deriving (Show, Eq)
 
+instance Ord Score where
+  compare a b
+    | a == b = EQ
+  compare (Win X) _ = GT
+  compare _ (Win X) = LT
+  compare (Win O) _ = LT
+  compare _ (Win O) = GT
+
 gameStateToScore :: State -> Maybe Score
-gameStateToScore (GameOver (Just player))
-  = Just (Win player)
+gameStateToScore (GameOver (Just player)) = Just (Win player)
 gameStateToScore (GameOver Nothing) = Just Draw
 gameStateToScore Going = Nothing
 
@@ -32,10 +39,29 @@ compareByPlayer player s1 s2 =
       | player == player' -> LT
       | otherwise -> GT
 
+pickByPlayer :: Player -> Score -> Score -> Score
+pickByPlayer player s1@(Win player') s2
+  | player == player' = s1
+  | otherwise = s2
+pickByPlayer player s1 s2@(Win player')
+  | player == player' = s2
+  | otherwise = s1
+pickByPlayer _ Draw _ = Draw
+
+chooseByPlayer :: Player -> [Score] -> Score
+chooseByPlayer X = maximum
+chooseByPlayer _ = minimum
+
+chooseByPlayerBy X = maximumBy
+chooseByPlayerBy _ = minimumBy
+
 findBlanks :: Board -> [(Int,Int)]
 findBlanks
   = concat . mapPos
     (\pos -> maybe [pos] (const []))
+
+sons :: Game -> [Game]
+sons game = map (`unsafeMarkInGame`game) $ findBlanks $ currentBoard game
 
 score :: Game -> Score
 score (Game _ _ (GameOver (Just player))) = Win player
@@ -46,7 +72,7 @@ score game@(Game board player Going) =
     [] -> Draw
     bs ->
       let scenarios = map (`unsafeMarkInGame` game) bs
-       in maximumBy (compareByPlayer player)
+       in foldl1 (pickByPlayer player)
           $ map score scenarios
 score _ = Draw
 
@@ -56,14 +82,14 @@ aimove game@(Game board player Going)
   , scenarios <- map (`unsafeMarkInGame` game) bs
   = Just
   $ fst
-  $ maximumBy (compareByPlayer player `on` snd)
+  $ chooseByPlayerBy player (compare `on` snd)
   $ zip bs
   $ map score scenarios
 aimove _ = Nothing
 
 
 aitransform :: Event -> Game -> Game
-aitransform (EventKey (MouseButton RightButton) Up _ _) game = initial $ nrows $ currentBoard game
+aitransform (EventKey (Char 'r') Up _ _) game = initial $ nrows $ currentBoard game
 aitransform (EventKey (Char 'a') Up _ _) game = maybe game (`unsafeMarkInGame` game) $ aimove game
 aitransform (EventKey (MouseButton LeftButton) Up _ (mouseY, mouseX))
             game@(Game board player state)

@@ -6,6 +6,7 @@ import Data.Matrix
 
 import Game
 
+
 other :: Player -> Player
 other X = O
 other O = X
@@ -79,7 +80,7 @@ unsafeMarkInGame pos (Game board player state)
   where board' = unsafeMark player pos board
 
 transform :: Event -> Game -> Game
-transform (EventKey (MouseButton RightButton) Up _ _) game = initial $ nrows $ currentBoard game
+transform (EventKey (Char 'r') Up _ _) game = initial $ nrows $ currentBoard game
 transform (EventKey (MouseButton LeftButton) Up _ (mouseY, mouseX))
           game@(Game board player state)
   | n <- fromIntegral $ nrows board
