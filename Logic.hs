@@ -13,6 +13,15 @@ other O = X
 full :: Board -> Bool
 full = isJust . sequenceA 
 
+isNotWorth :: Game -> Bool
+isNotWorth (Game _ _ (GameOver _)) = True
+isNotWorth (Game board player Going) = all (thereIsA (other player)) totalLines
+  where
+    rows = toLists board
+    cols = toLists $ transpose board
+    totalLines = rows ++ cols
+    thereIsA p = elem (Just p)
+
 wonBy :: Player -> Board -> Bool
 wonBy player board = anyWin $ concat [boardRows, boardCols, boardDias]
   where

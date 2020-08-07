@@ -1,5 +1,6 @@
 module AIJV where
 
+import Graphics.Gloss.Interface.IO.Interact
 import Data.Maybe
 import Data.Matrix
 import Data.List
@@ -38,7 +39,9 @@ findBlanks
 
 score :: Game -> Score
 score (Game _ _ (GameOver (Just player))) = Win player
-score game@(Game board player Going) =
+score game@(Game board player Going)
+  | isNotWorth game = Draw
+  | otherwise =
   case findBlanks board of
     [] -> Draw
     bs ->
@@ -57,3 +60,22 @@ aimove game@(Game board player Going)
   $ zip bs
   $ map score scenarios
 aimove _ = Nothing
+
+
+aitransform :: Event -> Game -> Game
+aitransform (EventKey (MouseButton RightButton) Up _ _) game = initial $ nrows $ currentBoard game
+aitransform (EventKey (Char 'a') Up _ _) game = maybe game (`unsafeMarkInGame` game) $ aimove game
+aitransform (EventKey (MouseButton LeftButton) Up _ (mouseY, mouseX))
+            game@(Game board player state)
+  | n <- fromIntegral $ nrows board
+  , i <- ceiling $ n*(mouseY + totalSide/2)/totalSide
+  , j <- ceiling $ n*(mouseX + totalSide/2)/totalSide
+  , mouseX >= -totalSide/2 && mouseX <= totalSide/2 && mouseY >= -totalSide/2 && mouseY <= totalSide/2
+  , Going <- state
+  , Just board' <- markAsIn player (i,j) board
+  = if not (wonIn (i,j) board')
+    then if not (full board')
+         then Game board' (other player) Going
+         else Game board' (other player) $ GameOver Nothing
+    else Game board' (other player) $ GameOver $ Just player
+aitransform _ game = game

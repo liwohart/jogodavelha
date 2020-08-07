@@ -7,6 +7,7 @@ import Data.Maybe (listToMaybe, fromMaybe)
 import Game
 import Drawing
 import Logic
+import AIJV
 
 window = InWindow "Jogo Da Velha" (truncate totalSide,truncate totalSide) (100,50) 
 
@@ -20,5 +21,5 @@ main = do
     (initial size)
     (drawGame
       (size, totalSide / fromIntegral size))
-    transform
+    aitransform
     (const id)
