@@ -13,8 +13,24 @@ other O = X
 full :: Board -> Bool
 full = isJust . sequenceA 
 
-won :: (Int,Int) -> Board -> Bool
-won (i,j) board = anyWin $ boardRow:boardCol:boardDia
+wonBy :: Player -> Board -> Bool
+wonBy player board = anyWin $ concat [boardRows, boardCols, boardDias]
+  where
+    n = nrows board
+    boardRows = toLists board
+    boardCols = toLists $ transpose board
+    boardDias = [prin, sec]
+      where
+        prin = [ board ! (index,index)
+               | index <- [1..n]]
+        sec = [ board ! (index,n + 1 - index)
+              | index <- [1..n]]
+    allSame l = maybe False (all (uncurry (==)) . (zip <$> id <*> tail))
+              $ sequenceA l
+    anyWin ls = any allSame ls
+
+wonIn :: (Int,Int) -> Board -> Bool
+wonIn (i,j) board = anyWin $ boardRow:boardCol:boardDia
   where
     n = nrows board
     boardRow = [ board ! (i,index)
@@ -37,11 +53,21 @@ won (i,j) board = anyWin $ boardRow:boardCol:boardDia
               . sequenceA 
     anyWin ls = any allSame ls
 
-markInPosAs :: (Int,Int) -> Player -> Board -> Maybe Board
-markInPosAs pos player board =
+markAsIn :: Player -> (Int,Int) -> Board -> Maybe Board
+markAsIn player pos board =
   case board ! pos of
     Nothing -> Just $ setElem (Just player) pos board
     _ -> Nothing
+
+unsafeMark :: Player -> (Int,Int) -> Board -> Board
+unsafeMark = setElem . Just
+
+unsafeMarkInGame :: (Int,Int) -> Game -> Game
+unsafeMarkInGame pos (Game board player state)
+  | wonIn pos board' = Game board' (other player) (GameOver $ Just player)
+  | full board' = Game board' (other player) (GameOver Nothing)
+  | otherwise = Game board' (other player) state
+  where board' = unsafeMark player pos board
 
 transform :: Event -> Game -> Game
 transform (EventKey (MouseButton RightButton) Up _ _) game = initial $ nrows $ currentBoard game
@@ -52,8 +78,8 @@ transform (EventKey (MouseButton LeftButton) Up _ (mouseY, mouseX))
   , j <- ceiling $ n*(mouseX + totalSide/2)/totalSide
   , mouseX >= -totalSide/2 && mouseX <= totalSide/2 && mouseY >= -totalSide/2 && mouseY <= totalSide/2
   , Going <- state
-  , Just board' <- markInPosAs (i,j) player board
-  = if not (won (i,j) board')
+  , Just board' <- markAsIn player (i,j) board
+  = if not (wonIn (i,j) board')
     then if not (full board')
          then Game board' (other player) Going
          else Game board' (other player) $ GameOver Nothing
